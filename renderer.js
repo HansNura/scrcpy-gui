@@ -20,6 +20,26 @@ navBtns.forEach(btn => {
   });
 });
 
+const SVG_WIFI = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="currentColor" d="M9 8a1 1 0 1 1-2 0a1 1 0 0 1 2 0"/><path fill="currentColor" fill-rule="evenodd" d="M9.68 5.26a.75.75 0 0 1 1.06 0a3.875 3.875 0 0 1 0 5.48a.75.75 0 1 1-1.06-1.06a2.375 2.375 0 0 0 0-3.36a.75.75 0 0 1 0-1.06m-3.36 0a.75.75 0 0 1 0 1.06a2.375 2.375 0 0 0 0 3.36a.75.75 0 1 1-1.06 1.06a3.875 3.875 0 0 1 0-5.48a.75.75 0 0 1 1.06 0" clip-rule="evenodd"/><path fill="currentColor" fill-rule="evenodd" d="M11.89 3.05a.75.75 0 0 1 1.06 0a7 7 0 0 1 0 9.9a.75.75 0 1 1-1.06-1.06a5.5 5.5 0 0 0 0-7.78a.75.75 0 0 1 0-1.06m-7.78 0a.75.75 0 0 1 0 1.06a5.5 5.5 0 0 0 0 7.78a.75.75 0 1 1-1.06 1.06a7 7 0 0 1 0-9.9a.75.75 0 0 1 1.06 0" clip-rule="evenodd"/></svg>`;
+const SVG_PHONE = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><rect width="12.5" height="18.5" x="5.75" y="2.75" rx="3"/><path d="M11 17.75h2"/></g></svg>`;
+
+let isMirroring = false;
+
+window.scrcpyAPI.onScrcpyStatus((status) => {
+  isMirroring = status.running;
+  if (isMirroring) {
+    startBtn.textContent = 'STOP MIRRORING';
+    startBtn.style.background = '#ef4444'; // Red color
+    startBtn.style.borderColor = '#dc2626';
+    if (recordBtn) recordBtn.disabled = true;
+  } else {
+    startBtn.textContent = 'START MIRRORING';
+    startBtn.style.background = ''; // Revert to CSS default
+    startBtn.style.borderColor = '';
+    if (recordBtn) recordBtn.disabled = !selectedDevice;
+  }
+});
+
 // Load Devices
 async function loadDevices() {
   deviceList.innerHTML = '<li class="empty-state">Scanning for devices...</li>';
@@ -33,42 +53,54 @@ async function loadDevices() {
     const pairedDevices = await window.scrcpyAPI.getPairedDevices();
 
     // Separate raw mDNS entries (auto-detected by ADB) from real connectable devices
-    const mdnsRaw = connectedDevices.filter(d => d.includes('._adb-tls-connect'));
-    const visibleConnected = connectedDevices.filter(d => !d.includes('._adb-tls-connect'));
-    window.availableMdnsDevices = mdnsRaw;
+    const mdnsRaw = connectedDevices.filter(d => d.id.includes('._adb-tls-connect'));
+    const visibleConnected = connectedDevices.filter(d => !d.id.includes('._adb-tls-connect'));
+    window.availableMdnsDevices = mdnsRaw.map(d => d.id);
 
     deviceList.innerHTML = '';
 
     if (visibleConnected.length === 0 && pairedDevices.length === 0) {
-      const emptyLi = document.createElement('li');
-      emptyLi.className = 'empty-state';
-      emptyLi.textContent = 'No devices. Connect via USB or pair a Wi-Fi device.';
-      deviceList.appendChild(emptyLi);
+      const emptyTr = document.createElement('tr');
+      emptyTr.innerHTML = '<td colspan="4" class="empty-state" style="padding: 20px; text-align: center; color: #64748b;">No devices. Connect via USB or pair a Wi-Fi device.</td>';
+      deviceList.appendChild(emptyTr);
     }
 
     // 1. Show only clean connected devices (USB & already-connected Wi-Fi)
     visibleConnected.forEach(device => {
-      const isWifi = device.includes(':');
-      const li = document.createElement('li');
-      li.style.display = 'flex';
-      li.style.justifyContent = 'space-between';
-      li.style.alignItems = 'center';
-      li.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 18px; color: ${isWifi ? '#10b981' : '#3b82f6'}">${isWifi ? '📶' : '📱'}</span>
-          <div>
-            <div style="font-weight: 500; font-size: 14px;">${device}</div>
-            <div style="font-size: 11px; color: #64748b;">${isWifi ? 'Wi-Fi' : 'USB'} • Ready to mirror</div>
-          </div>
-        </div>
-        <span style="font-size: 11px; padding: 3px 8px; background: rgba(16,185,129,0.15); color: #10b981; border-radius: 4px; font-weight: 600; border: 1px solid rgba(16,185,129,0.3);">CONNECTED</span>
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.style.transition = 'all 0.2s';
+      tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+      
+      tr.onmouseover = () => { if(!tr.classList.contains('selected')) tr.style.background = 'rgba(255,255,255,0.05)'; };
+      tr.onmouseout = () => { if(!tr.classList.contains('selected')) tr.style.background = 'transparent'; };
+      tr.onclick = () => selectDevice(tr, device.id);
+
+      tr.innerHTML = `
+        <td style="padding: 12px; text-align: center; vertical-align: middle;">
+          <span style="font-size: 20px; display: inline-flex; align-items: center; justify-content: center; color: ${device.isWifi ? '#10b981' : '#3b82f6'}">${device.isWifi ? SVG_WIFI : SVG_PHONE}</span>
+        </td>
+        <td style="padding: 12px; vertical-align: middle;">
+          <div style="font-weight: 600; font-size: 14px; color: #f8fafc;">${device.name}</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-family: monospace;">${device.id}</div>
+        </td>
+        <td style="padding: 12px; vertical-align: middle;">
+          <span style="font-size: 11px; padding: 4px 8px; background: rgba(16,185,129,0.15); color: #10b981; border-radius: 4px; font-weight: 600; border: 1px solid rgba(16,185,129,0.3);">CONNECTED</span>
+        </td>
+        <td style="padding: 12px; vertical-align: middle; text-align: right;">
+          ${device.isWifi ? `
+            <button onclick="event.stopPropagation(); window.disconnectDevice('${device.id}')"
+              style="font-size: 11px; padding: 6px 10px; background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; cursor: pointer; transition: background 0.2s;" title="Disconnect Wi-Fi Device">
+              DISCONNECT
+            </button>
+          ` : ''}
+        </td>
       `;
-      li.onclick = () => selectDevice(li, device);
-      deviceList.appendChild(li);
+      deviceList.appendChild(tr);
     });
 
     // 2. Show stored paired devices not already visibly connected
-    const connectedBaseIps = visibleConnected.map(d => d.split(':')[0]);
+    const connectedBaseIps = visibleConnected.map(d => d.id.split(':')[0]);
     pairedDevices.forEach(paired => {
       const baseIp = paired.ip.split(':')[0];
       if (connectedBaseIps.includes(baseIp)) return; // already shown above
@@ -78,43 +110,47 @@ async function loadDevices() {
       const isOnline = !!matchedMdns;
 
       const onlineBadge = isOnline
-        ? `<span style="font-size: 11px; color: #10b981; margin-left: 6px;">🟢 ONLINE</span>`
-        : '';
+        ? `<span style="font-size: 11px; color: #10b981; margin-left: 8px;">🟢 ONLINE</span>`
+        : `<span style="font-size: 11px; color: #64748b; margin-left: 8px;">⚫ OFFLINE</span>`;
 
-      const li = document.createElement('li');
-      li.style.display = 'flex';
-      li.style.justifyContent = 'space-between';
-      li.style.alignItems = 'center';
-      li.style.cursor = 'default';
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'default';
+      tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+      tr.style.opacity = isOnline ? '1' : '0.6';
 
-      li.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px; opacity: ${isOnline ? '1' : '0.7'};">
-          <span style="font-size: 18px; color: ${isOnline ? '#10b981' : '#64748b'};">📶</span>
-          <div>
-            <div style="font-weight: 500; font-size: 14px;">${paired.name}${onlineBadge}</div>
-            <div style="font-size: 11px; color: #64748b;">${baseIp} • Paired, not connected</div>
+      tr.innerHTML = `
+        <td style="padding: 12px; text-align: center; vertical-align: middle;">
+          <span style="font-size: 20px; display: inline-flex; align-items: center; justify-content: center; color: ${isOnline ? '#10b981' : '#64748b'};">${SVG_WIFI}</span>
+        </td>
+        <td style="padding: 12px; vertical-align: middle;">
+          <div style="font-weight: 600; font-size: 14px; color: #f8fafc;">${paired.name}</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px; font-family: monospace;">${baseIp}</div>
+        </td>
+        <td style="padding: 12px; vertical-align: middle;">
+          ${onlineBadge}
+        </td>
+        <td style="padding: 12px; vertical-align: middle; text-align: right;">
+          <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button onclick="event.stopPropagation(); connectPairedDevice('${baseIp}', this, '${paired.name}')"
+              style="font-size: 11px; padding: 6px 12px; background: ${isOnline ? '#10b981' : '#334155'}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: opacity 0.2s;">
+              CONNECT
+            </button>
+            <button onclick="event.stopPropagation(); forgetPairedDevice('${paired.ip}')"
+              style="font-size: 11px; padding: 6px 10px; background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; cursor: pointer; transition: background 0.2s;" title="Remove from list">
+              ✕
+            </button>
           </div>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button onclick="event.stopPropagation(); connectPairedDevice('${baseIp}', this, '${paired.name}')"
-            style="font-size: 11px; padding: 5px 12px; background: ${isOnline ? '#10b981' : '#3b82f6'}; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: opacity 0.2s;">
-            CONNECT
-          </button>
-          <button onclick="event.stopPropagation(); forgetPairedDevice('${paired.ip}')"
-            style="font-size: 11px; padding: 5px 8px; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; cursor: pointer;" title="Remove from list">
-            ✕
-          </button>
-        </div>
+        </td>
       `;
-      deviceList.appendChild(li);
+      deviceList.appendChild(tr);
     });
 
     // Auto-select first visible connected device
     if (visibleConnected.length > 0) {
-      selectDevice(deviceList.firstChild, visibleConnected[0]);
+      selectDevice(deviceList.querySelector('tr'), visibleConnected[0].id);
     }
   } catch (error) {
-    deviceList.innerHTML = '<li class="empty-state" style="color:#ef4444;">Error checking devices.</li>';
+    deviceList.innerHTML = '<tr><td colspan="4" class="empty-state" style="padding: 20px; text-align: center; color:#ef4444;">Error checking devices.</td></tr>';
   }
 }
 
@@ -214,14 +250,28 @@ async function connectPairedDevice(baseIp, btnElement, pairedName = '') {
 }
 
 
-async function forgetPairedDevice(ip) {
-  await window.scrcpyAPI.removePairedDevice(ip);
-  loadDevices();
-}
+window.forgetPairedDevice = async function(ip) {
+  if (confirm(`Are you sure you want to forget the paired device ${ip}?`)) {
+    await window.scrcpyAPI.removePairedDevice(ip);
+    loadDevices();
+  }
+};
+
+window.disconnectDevice = async function(ip) {
+  if (confirm(`Are you sure you want to disconnect from ${ip}?`)) {
+    await window.scrcpyAPI.adbDisconnect(ip);
+    loadDevices();
+  }
+};
 
 function selectDevice(element, deviceId) {
-  document.querySelectorAll('.device-list li').forEach(li => li.classList.remove('selected'));
+  document.querySelectorAll('#device-list tr').forEach(tr => {
+    tr.classList.remove('selected');
+    tr.style.background = 'transparent';
+    tr.style.borderColor = 'rgba(255,255,255,0.05)';
+  });
   element.classList.add('selected');
+  element.style.background = 'rgba(16, 185, 129, 0.1)';
   selectedDevice = deviceId;
   startBtn.disabled = false;
   if (recordBtn) recordBtn.disabled = false;
@@ -229,13 +279,26 @@ function selectDevice(element, deviceId) {
 
 // Start Scrcpy
 startBtn.addEventListener('click', async () => {
+  if (isMirroring) {
+    await window.scrcpyAPI.stopScrcpy();
+    return;
+  }
+
   if (!selectedDevice) return;
 
   const options = {
     deviceId: selectedDevice,
     turnScreenOff: document.getElementById('opt-turn-screen-off').checked,
     alwaysOnTop: document.getElementById('opt-always-on-top').checked,
-    borderless: document.getElementById('opt-borderless').checked
+    borderless: document.getElementById('opt-borderless').checked,
+    stayAwake: document.getElementById('opt-stay-awake').checked,
+    showTouches: document.getElementById('opt-show-touches').checked,
+    videoCodec: document.getElementById('perf-video-codec').value,
+    bitrate: document.getElementById('perf-bitrate').value,
+    maxFps: document.getElementById('perf-max-fps').value,
+    audioForwarding: document.getElementById('perf-audio-forwarding').checked,
+    cameraMode: document.getElementById('adv-camera-mode').checked,
+    otgMode: document.getElementById('adv-otg-mode').checked
   };
 
   // Visual feedback
@@ -244,7 +307,6 @@ startBtn.addEventListener('click', async () => {
 
   try {
     await window.scrcpyAPI.runScrcpy(options);
-    setTimeout(() => { startBtn.textContent = originalText; }, 2000);
   } catch (err) {
     alert('Error starting Scrcpy: ' + err);
     startBtn.textContent = originalText;
@@ -257,15 +319,29 @@ if (recordBtn) {
     if (!selectedDevice) return;
 
     let filename = document.getElementById('record-filename').value.trim();
+    const format = document.getElementById('record-format').value;
+
     if (!filename) {
-      filename = 'recording_' + Date.now() + '.mp4';
+      filename = 'recording_' + Date.now() + '.' + format;
     } else if (!filename.endsWith('.mp4') && !filename.endsWith('.mkv')) {
-      filename += '.mp4';
+      filename += '.' + format;
     }
 
     const options = {
       deviceId: selectedDevice,
-      recordPath: filename
+      recordPath: filename,
+      turnScreenOff: document.getElementById('opt-turn-screen-off').checked,
+      alwaysOnTop: document.getElementById('opt-always-on-top').checked,
+      borderless: document.getElementById('opt-borderless').checked,
+      stayAwake: document.getElementById('opt-stay-awake').checked,
+      showTouches: document.getElementById('opt-show-touches').checked,
+      videoCodec: document.getElementById('perf-video-codec').value,
+      bitrate: document.getElementById('perf-bitrate').value,
+      maxFps: document.getElementById('perf-max-fps').value,
+      audioForwarding: document.getElementById('perf-audio-forwarding').checked,
+      cameraMode: document.getElementById('adv-camera-mode').checked,
+      otgMode: document.getElementById('adv-otg-mode').checked,
+      recordBackground: document.getElementById('opt-record-background').checked
     };
 
     const originalText = recordBtn.textContent;
@@ -284,6 +360,15 @@ if (recordBtn) {
 
 // Init
 refreshBtn.addEventListener('click', loadDevices);
+
+// Performance Bitrate Slider
+const perfBitrate = document.getElementById('perf-bitrate');
+const bitrateDisplay = document.getElementById('bitrate-display');
+if (perfBitrate && bitrateDisplay) {
+  perfBitrate.addEventListener('input', (e) => {
+    bitrateDisplay.textContent = `${e.target.value} Mbps`;
+  });
+}
 
 // Wireless Pairing & Connection
 const openPairModalBtn = document.getElementById('open-pair-modal-btn');
@@ -304,36 +389,40 @@ async function performScan() {
     const devices = res.pairing;
 
     if (devices.length === 0) {
-      pairingDeviceList.innerHTML = '<li class="empty-state" style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 13px;">Searching for devices...</li>';
+      pairingDeviceList.innerHTML = '<tr><td colspan="3" class="empty-state" style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 13px;">Searching for devices...</td></tr>';
     } else {
       pairingDeviceList.innerHTML = '';
       devices.forEach(device => {
-        const li = document.createElement('li');
-        li.style.padding = '16px 20px';
-        li.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-        li.style.cursor = 'pointer';
-        li.style.display = 'flex';
-        li.style.justifyContent = 'space-between';
-        li.style.alignItems = 'center';
-        li.style.transition = 'background 0.2s';
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        tr.style.cursor = 'pointer';
+        tr.style.transition = 'background 0.2s';
+        tr.style.display = 'table';
+        tr.style.width = '100%';
+        tr.style.tableLayout = 'fixed';
 
-        li.innerHTML = `
-          <div>
-            <div style="font-weight: 500; color: #f8fafc; font-size: 14px;">${device.name}</div>
-            <div style="color: #64748b; font-size: 12px; margin-top: 4px;">${device.ipPort}</div>
-          </div>
-          <div style="color: #10b981; font-size: 12px; font-weight: 600;">PAIR</div>
+        tr.innerHTML = `
+          <td style="padding: 12px; text-align: center; vertical-align: middle; width: 60px;">
+            <span style="font-size: 18px; color: #3b82f6;">${SVG_PHONE}</span>
+          </td>
+          <td style="padding: 12px; vertical-align: middle;">
+            <div style="font-weight: 600; color: #f8fafc; font-size: 14px;">${device.name}</div>
+            <div style="color: #64748b; font-size: 11px; margin-top: 4px; font-family: monospace;">${device.ipPort}</div>
+          </td>
+          <td style="padding: 12px; vertical-align: middle; text-align: right;">
+            <span style="color: #10b981; font-size: 12px; font-weight: 600; padding: 6px 12px; background: rgba(16,185,129,0.1); border-radius: 6px;">PAIR</span>
+          </td>
         `;
 
-        li.onmouseover = () => { li.style.background = 'rgba(255,255,255,0.05)'; };
-        li.onmouseout = () => { li.style.background = 'transparent'; };
-        li.onclick = () => openEnterCodeModal(device);
+        tr.onmouseover = () => { tr.style.background = 'rgba(255,255,255,0.05)'; };
+        tr.onmouseout = () => { tr.style.background = 'transparent'; };
+        tr.onclick = () => openEnterCodeModal(device);
 
-        pairingDeviceList.appendChild(li);
+        pairingDeviceList.appendChild(tr);
       });
     }
   } catch (err) {
-    pairingDeviceList.innerHTML = '<li class="empty-state" style="padding: 40px 20px; text-align: center; color: #ef4444; font-size: 13px;">Error scanning devices.</li>';
+    pairingDeviceList.innerHTML = '<tr><td colspan="3" class="empty-state" style="padding: 40px 20px; text-align: center; color: #ef4444; font-size: 13px;">Error scanning devices.</td></tr>';
   }
 }
 
@@ -422,5 +511,45 @@ modalSubmitBtn.addEventListener('click', async () => {
     modalSubmitBtn.disabled = false;
   }
 });
+
+// Console Logic
+const consolePanel = document.getElementById('console-panel');
+const consoleOutput = document.getElementById('console-output');
+const toggleConsoleBtn = document.getElementById('toggle-console-btn');
+const closeConsoleBtn = document.getElementById('close-console-btn');
+
+function toggleConsole() {
+  if (consolePanel.style.display === 'none') {
+    consolePanel.style.display = 'flex';
+  } else {
+    consolePanel.style.display = 'none';
+  }
+}
+
+if (toggleConsoleBtn) toggleConsoleBtn.addEventListener('click', toggleConsole);
+if (closeConsoleBtn) closeConsoleBtn.addEventListener('click', () => consolePanel.style.display = 'none');
+
+if (window.scrcpyAPI.onScrcpyLog) {
+  window.scrcpyAPI.onScrcpyLog((data) => {
+    if (data.includes('ERROR:')) {
+      consolePanel.style.display = 'flex';
+    }
+    const span = document.createElement('span');
+    span.textContent = data;
+    if (data.includes('ERROR:')) {
+      span.style.color = '#ef4444';
+    } else if (data.startsWith('> scrcpy')) {
+      span.style.color = '#3b82f6';
+      span.style.fontWeight = 'bold';
+      // Add visual separator for new commands
+      const hr = document.createElement('hr');
+      hr.style.borderColor = 'rgba(255,255,255,0.1)';
+      hr.style.margin = '8px 0';
+      consoleOutput.appendChild(hr);
+    }
+    consoleOutput.appendChild(span);
+    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+  });
+}
 
 loadDevices();

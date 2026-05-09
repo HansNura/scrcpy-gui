@@ -8,5 +8,9 @@ contextBridge.exposeInMainWorld('scrcpyAPI', {
   removePairedDevice: (ip) => ipcRenderer.invoke('remove-paired-device', ip),
   scanMdnsDevices: () => ipcRenderer.invoke('scan-mdns-devices'),
   adbConnect: (ip) => ipcRenderer.invoke('adb-connect', ip),
-  adbPair: (data) => ipcRenderer.invoke('adb-pair', data)
+  adbDisconnect: (ip) => ipcRenderer.invoke('adb-disconnect', ip),
+  adbPair: (data) => ipcRenderer.invoke('adb-pair', data),
+  onScrcpyLog: (callback) => ipcRenderer.on('scrcpy-log', (event, data) => callback(data)),
+  stopScrcpy: () => ipcRenderer.invoke('stop-scrcpy'),
+  onScrcpyStatus: (callback) => ipcRenderer.on('scrcpy-status', (event, status) => callback(status))
 });

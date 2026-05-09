@@ -18,9 +18,11 @@
       <nav>
         <button class="nav-btn active" data-target="mirror-view">Mirroring</button>
         <button class="nav-btn" data-target="record-view">Recording</button>
-        <button class="nav-btn" data-target="settings-view">Settings</button>
+        <button class="nav-btn" data-target="performance-view">Performance</button>
+        <button class="nav-btn" data-target="advanced-view">Advanced</button>
       </nav>
       <div class="sidebar-footer">
+        <button id="toggle-console-btn" class="nav-btn" style="padding: 6px 12px; font-size: 12px; margin-bottom: 8px; width: 100%; text-align: center; background: rgba(255,255,255,0.05);">Toggle Console</button>
         <p>v1.1.0</p>
       </div>
     </aside>
@@ -44,9 +46,19 @@
             <h3>Connected Devices</h3>
             <button id="refresh-btn" class="icon-btn" title="Refresh">↻</button>
           </div>
-          <ul id="device-list" class="device-list">
-            <li class="empty-state">Scanning for devices...</li>
-          </ul>
+          <table class="glass-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #94a3b8; font-size: 12px; text-transform: uppercase;">
+                <th style="padding: 12px; font-weight: 600; width: 60px; text-align: center;">Type</th>
+                <th style="padding: 12px; font-weight: 600;">Device Info</th>
+                <th style="padding: 12px; font-weight: 600;">Status</th>
+                <th style="padding: 12px; font-weight: 600; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="device-list" class="device-list">
+              <tr><td colspan="4" class="empty-state" style="padding: 20px; text-align: center; color: #64748b;">Scanning for devices...</td></tr>
+            </tbody>
+          </table>
         </div>
 
         <div class="quick-actions">
@@ -72,6 +84,20 @@
               </label>
               <span>Borderless Window</span>
             </div>
+            <div class="toggle-group">
+              <label class="switch">
+                <input type="checkbox" id="opt-stay-awake">
+                <span class="slider round"></span>
+              </label>
+              <span>Stay Awake</span>
+            </div>
+            <div class="toggle-group">
+              <label class="switch">
+                <input type="checkbox" id="opt-show-touches">
+                <span class="slider round"></span>
+              </label>
+              <span>Show Touches</span>
+            </div>
           </div>
         </div>
 
@@ -86,23 +112,108 @@
           <h2>Screen Recording</h2>
           <p>Record your screen directly to MP4/MKV.</p>
         </header>
-        <div class="glass form-group" style="padding: 24px;">
-          <label style="display:block; margin-bottom: 8px; color: #94a3b8;">File Name</label>
-          <input type="text" id="record-filename" placeholder="my_recording.mp4" class="custom-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white;">
+        <div class="glass form-group" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <label style="display:block; margin-bottom: 8px; color: #94a3b8;">File Name</label>
+            <input type="text" id="record-filename" placeholder="my_recording" class="custom-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white;">
+          </div>
+          <div>
+            <label style="display:block; margin-bottom: 8px; color: #94a3b8;">Format</label>
+            <select id="record-format" class="custom-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white;">
+              <option value="mp4">.mp4</option>
+              <option value="mkv">.mkv</option>
+            </select>
+          </div>
+          <div class="toggle-group" style="margin-top: 8px;">
+            <label class="switch">
+              <input type="checkbox" id="opt-record-background">
+              <span class="slider round"></span>
+            </label>
+            <div>
+              <span style="display: block;">Record Background</span>
+              <span style="font-size: 12px; color: #94a3b8;">Record without opening mirroring window</span>
+            </div>
+          </div>
           <button id="record-btn" class="primary-btn glow" style="margin-top:20px; width: 100%;" disabled>START RECORDING</button>
         </div>
       </section>
 
-      <!-- Settings View -->
-      <section id="settings-view" class="view-section">
+      <!-- Performance View -->
+      <section id="performance-view" class="view-section">
         <header>
-          <h2>Settings</h2>
-          <p>Advanced configurations.</p>
+          <h2>Performance</h2>
+          <p>Optimize streaming quality and framerate.</p>
         </header>
-        <div class="glass" style="padding: 24px;">
-          <p style="color: #94a3b8;">Advanced configuration options will be available here soon.</p>
+        <div class="glass" style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+          <div>
+            <label style="display:block; margin-bottom: 8px; color: #94a3b8;">Video Codec</label>
+            <select id="perf-video-codec" class="custom-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white;">
+              <option value="">Default (H.264)</option>
+              <option value="h264">H.264</option>
+              <option value="h265">H.265 (HEVC)</option>
+              <option value="av1">AV1</option>
+            </select>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <label style="color: #94a3b8;">Bitrate (Mbps)</label>
+              <span id="bitrate-display" style="color: #10b981; font-weight: 600;">8 Mbps</span>
+            </div>
+            <input type="range" id="perf-bitrate" min="2" max="32" value="8" class="custom-slider" style="width: 100%;">
+          </div>
+          <div>
+            <label style="display:block; margin-bottom: 8px; color: #94a3b8;">Max FPS</label>
+            <input type="number" id="perf-max-fps" placeholder="Unlimited" class="custom-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white;">
+          </div>
+          <div class="toggle-group" style="margin-top: 8px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <label class="switch" style="transform: scale(1.2); margin-right: 8px;">
+              <input type="checkbox" id="perf-audio-forwarding" checked>
+              <span class="slider round"></span>
+            </label>
+            <span style="font-size: 16px; font-weight: 500;">Audio Forwarding</span>
+          </div>
         </div>
       </section>
+
+      <!-- Advanced View -->
+      <section id="advanced-view" class="view-section">
+        <header>
+          <h2>Advanced Features</h2>
+          <p>Explore additional capabilities.</p>
+        </header>
+        <div class="glass action-card" style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+          <div class="toggle-group">
+            <label class="switch">
+              <input type="checkbox" id="adv-camera-mode">
+              <span class="slider round"></span>
+            </label>
+            <div>
+              <span style="display: block;">Camera Mode</span>
+              <span style="font-size: 12px; color: #94a3b8;">Use device camera as a webcam</span>
+            </div>
+          </div>
+          <div class="toggle-group">
+            <label class="switch">
+              <input type="checkbox" id="adv-otg-mode">
+              <span class="slider round"></span>
+            </label>
+            <div>
+              <span style="display: block;">OTG Mode</span>
+              <span style="font-size: 12px; color: #94a3b8;">Use PC keyboard/mouse without video mirroring</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Console Log View -->
+      <div id="console-panel" class="glass" style="display: none; position: absolute; bottom: 0; left: 250px; right: 0; height: 250px; padding: 16px; flex-direction: column; z-index: 1000; border-radius: 16px 0 0 0; border-right: none; border-bottom: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="font-size: 14px; color: #10b981; margin: 0;">Terminal Output</h3>
+          <div>
+            <button id="close-console-btn" style="background: transparent; border: none; color: #94a3b8; padding: 2px 8px; font-size: 16px; cursor: pointer;">✕</button>
+          </div>
+        </div>
+        <div id="console-output" style="flex: 1; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 12px; color: #cbd5e1; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; white-space: pre-wrap; word-break: break-all;"></div>
+      </div>
     </main>
   </div>
 
@@ -127,11 +238,18 @@
           <span id="scan-loader" style="font-size: 12px; color: #64748b; display: none;">↻</span>
         </div>
 
-        <ul id="pairing-device-list" class="device-list"
-          style="list-style: none; margin: 0; padding: 0; height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2);">
-          <li class="empty-state" style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 13px;">
-            Searching for devices...</li>
-        </ul>
+        <table class="glass-table" style="width: 100%; border-collapse: collapse; text-align: left; background: rgba(0,0,0,0.2); display: block;">
+          <thead style="display: table; width: 100%; table-layout: fixed;">
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #94a3b8; font-size: 12px; text-transform: uppercase;">
+              <th style="padding: 12px; font-weight: 600; width: 60px; text-align: center;">Type</th>
+              <th style="padding: 12px; font-weight: 600;">Device Info</th>
+              <th style="padding: 12px; font-weight: 600; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pairing-device-list" class="device-list" style="display: block; height: 250px; overflow-y: auto; width: 100%;">
+            <tr><td colspan="3" class="empty-state" style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 13px;">Searching for devices...</td></tr>
+          </tbody>
+        </table>
 
         <div style="text-align: center; margin-top: 24px; padding-bottom: 10px;">
           <p style="color: #94a3b8; font-size: 13px; line-height: 1.6;">Set your Android 11+ device to pairing
