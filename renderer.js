@@ -293,24 +293,6 @@ const pairModal = document.getElementById('pair-modal');
 const pairingDeviceList = document.getElementById('pairing-device-list');
 const scanLoader = document.getElementById('scan-loader');
 
-// Tabs in Pair Modal
-const tabBtns = document.querySelectorAll('.tab-btn');
-const tabContents = document.querySelectorAll('.tab-content');
-
-tabBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    tabBtns.forEach(b => { b.classList.remove('active'); b.style.color = '#94a3b8'; b.style.borderColor = 'transparent'; });
-    tabContents.forEach(c => { c.style.display = 'none'; c.classList.remove('active'); });
-
-    btn.classList.add('active');
-    btn.style.color = '#10b981';
-    btn.style.borderColor = '#10b981';
-
-    const target = document.getElementById(btn.dataset.tab);
-    target.style.display = 'block';
-    target.classList.add('active');
-  });
-});
 
 let scanInterval = null;
 
