@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
   <div class="app-container">
     <aside class="sidebar">
@@ -15,7 +17,6 @@
       </div>
       <nav>
         <button class="nav-btn active" data-target="mirror-view">Mirroring</button>
-        <button class="nav-btn" data-target="record-view">Recording</button>
         <button class="nav-btn" data-target="settings-view">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -26,9 +27,15 @@
     <main class="content">
       <!-- Mirror View -->
       <section id="mirror-view" class="view-section active">
-        <header>
-          <h2>Connect & Mirror</h2>
-          <p>Select a device to start screen mirroring.</p>
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2>Connect & Mirror</h2>
+            <p>Select a device to start screen mirroring.</p>
+          </div>
+          <button id="open-pair-modal-btn" class="primary-btn glow"
+            style="display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); font-weight: 500; font-size: 14px; padding: 10px 16px; width: auto;">
+            <span style="color: #10b981; font-size: 18px;"></span> Pair Devices Using Wi-Fi
+          </button>
         </header>
 
         <div class="device-panel glass">
@@ -71,18 +78,6 @@
           START MIRRORING
         </button>
       </section>
-
-      <!-- Record View -->
-      <section id="record-view" class="view-section">
-        <header>
-          <h2>Screen Recording</h2>
-          <p>Record your screen directly to MP4/MKV.</p>
-        </header>
-        <div class="glass form-group" style="padding: 24px;">
-          <label style="display:block; margin-bottom: 8px; color: #94a3b8;">File Name</label>
-          <input type="text" id="record-filename" placeholder="my_recording.mp4" class="custom-input">
-          <button id="record-btn" class="primary-btn glow" style="margin-top:20px;" disabled>START RECORDING</button>
-        </div>
       </section>
 
       <!-- Settings View -->
@@ -98,6 +93,89 @@
     </main>
   </div>
 
+  <!-- Large Pairing Modal -->
+  <div id="pair-modal" class="modal-overlay">
+    <div class="modal-content glass"
+      style="width: 600px; padding: 0; background: #111827; border: 1px solid rgba(255,255,255,0.1);">
+
+      <div
+        style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; display: flex; align-items: center; gap: 10px; font-weight: 500;">
+          <span style="color: #10b981; font-size: 14px;">▶</span> Pair new devices over Wi-Fi
+        </h3>
+        <button id="close-pair-modal" class="icon-btn" style="color: #94a3b8; font-size: 16px;">✕</button>
+      </div>
+
+      <!-- Pairing Code Content (direct, no tabs) -->
+      <div id="code-tab" style="padding: 20px;">
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 13px; color: #e2e8f0; font-weight: 500;">Available Wi-Fi devices</span>
+          <span id="scan-loader" style="font-size: 12px; color: #64748b; display: none;">↻</span>
+        </div>
+
+        <ul id="pairing-device-list" class="device-list"
+          style="list-style: none; margin: 0; padding: 0; height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2);">
+          <li class="empty-state" style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 13px;">
+            Searching for devices...</li>
+        </ul>
+
+        <div style="text-align: center; margin-top: 24px; padding-bottom: 10px;">
+          <p style="color: #94a3b8; font-size: 13px; line-height: 1.6;">Set your Android 11+ device to pairing
+            mode<br><span style="color: #64748b;">Go to Developer options &gt; Wireless debugging &gt; Pair device with
+              pairing code</span></p>
+        </div>
+      </div>
+
+      <div
+        style="padding: 16px 20px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.05); text-align: right;">
+        <button id="close-pair-modal-btn" class="nav-btn"
+          style="background: rgba(255,255,255,0.1); padding: 8px 24px; color: #f8fafc; font-size: 14px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enter Code Modal -->
+  <div id="enter-code-modal" class="modal-overlay" style="z-index: 1001;">
+    <div class="modal-content glass" style="width: 380px; background: #0f172a; border: 1px solid #10b981;">
+      <h3 style="margin-bottom: 8px; text-align: center;">Enter Pairing Code</h3>
+      <p id="pair-modal-target" style="color: #94a3b8; font-size: 13px; margin-bottom: 24px; text-align: center;">
+        Pairing with: ...</p>
+
+      <input type="text" id="modal-pair-code" placeholder="123456" class="custom-input"
+        style="font-size: 28px; letter-spacing: 8px; text-align: center; margin-bottom: 24px; background: rgba(0,0,0,0.3); padding: 16px;">
+
+      <div style="display: flex; gap: 12px;">
+        <button id="modal-cancel-btn" class="nav-btn"
+          style="flex: 1; text-align: center; background: rgba(255,255,255,0.05);">CANCEL</button>
+        <button id="modal-submit-btn" class="primary-btn glow" style="flex: 1; padding: 12px;">PAIR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connect Port Modal -->
+  <div id="connect-port-modal" class="modal-overlay" style="z-index: 1002;">
+    <div class="modal-content glass" style="width: 400px; background: #0f172a; border: 1px solid #3b82f6;">
+      <h3 style="margin-bottom: 8px; text-align: center;">Enter Connection Port</h3>
+      <p id="connect-port-ip-label"
+        style="color: #3b82f6; font-size: 13px; margin-bottom: 12px; text-align: center; font-weight: 600;"></p>
+      <p
+        style="color: #64748b; font-size: 12px; margin-bottom: 20px; text-align: center; line-height: 1.7; background: rgba(59,130,246,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(59,130,246,0.1);">
+        Open <b style="color:#94a3b8;">Developer Options &rarr; Wireless Debugging</b> on your phone.<br>
+        The port number is shown at the top of that screen next to the IP address.
+      </p>
+      <input type="number" id="connect-port-input" placeholder="e.g. 43210" class="custom-input"
+        style="font-size: 22px; letter-spacing: 4px; text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.3); padding: 14px;">
+      <div style="display: flex; gap: 12px;">
+        <button id="connect-port-cancel" class="nav-btn"
+          style="flex: 1; text-align: center; background: rgba(255,255,255,0.05);">CANCEL</button>
+        <button id="connect-port-submit" class="primary-btn glow"
+          style="flex: 1; padding: 12px; background: #3b82f6;">CONNECT</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
+
 </html>
