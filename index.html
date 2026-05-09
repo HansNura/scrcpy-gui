@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrcpy Manager</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">
+        <h1>Scrcpy<span>Manager</span></h1>
+      </div>
+      <nav>
+        <button class="nav-btn active" data-target="mirror-view">Mirroring</button>
+        <button class="nav-btn" data-target="record-view">Recording</button>
+        <button class="nav-btn" data-target="settings-view">Settings</button>
+      </nav>
+      <div class="sidebar-footer">
+        <p>v1.0.0</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- Mirror View -->
+      <section id="mirror-view" class="view-section active">
+        <header>
+          <h2>Connect & Mirror</h2>
+          <p>Select a device to start screen mirroring.</p>
+        </header>
+
+        <div class="device-panel glass">
+          <div class="device-header">
+            <h3>Connected Devices</h3>
+            <button id="refresh-btn" class="icon-btn" title="Refresh">↻</button>
+          </div>
+          <ul id="device-list" class="device-list">
+            <li class="empty-state">Scanning for devices...</li>
+          </ul>
+        </div>
+
+        <div class="quick-actions">
+          <div class="action-card glass">
+            <div class="toggle-group">
+              <label class="switch">
+                <input type="checkbox" id="opt-turn-screen-off">
+                <span class="slider round"></span>
+              </label>
+              <span>Turn Screen Off</span>
+            </div>
+            <div class="toggle-group">
+              <label class="switch">
+                <input type="checkbox" id="opt-always-on-top">
+                <span class="slider round"></span>
+              </label>
+              <span>Always on Top</span>
+            </div>
+            <div class="toggle-group">
+              <label class="switch">
+                <input type="checkbox" id="opt-borderless">
+                <span class="slider round"></span>
+              </label>
+              <span>Borderless Window</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="start-btn" class="primary-btn glow" disabled>
+          START MIRRORING
+        </button>
+      </section>
+
+      <!-- Record View -->
+      <section id="record-view" class="view-section">
+        <header>
+          <h2>Screen Recording</h2>
+          <p>Record your screen directly to MP4/MKV.</p>
+        </header>
+        <div class="glass form-group" style="padding: 24px;">
+          <label style="display:block; margin-bottom: 8px; color: #94a3b8;">File Name</label>
+          <input type="text" id="record-filename" placeholder="my_recording.mp4" class="custom-input">
+          <button id="record-btn" class="primary-btn glow" style="margin-top:20px;" disabled>START RECORDING</button>
+        </div>
+      </section>
+
+      <!-- Settings View -->
+      <section id="settings-view" class="view-section">
+        <header>
+          <h2>Settings</h2>
+          <p>Advanced configurations.</p>
+        </header>
+        <div class="glass" style="padding: 24px;">
+          <p style="color: #94a3b8;">Advanced configuration options will be available here soon.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
