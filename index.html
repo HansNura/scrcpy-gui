@@ -17,6 +17,7 @@
       </div>
       <nav>
         <button class="nav-btn active" data-target="mirror-view">Mirroring</button>
+        <button class="nav-btn" data-target="record-view">Recording</button>
         <button class="nav-btn" data-target="settings-view">Settings</button>
       </nav>
       <div class="sidebar-footer">
@@ -78,6 +79,18 @@
           START MIRRORING
         </button>
       </section>
+
+      <!-- Record View -->
+      <section id="record-view" class="view-section">
+        <header>
+          <h2>Screen Recording</h2>
+          <p>Record your screen directly to MP4/MKV.</p>
+        </header>
+        <div class="glass form-group" style="padding: 24px;">
+          <label style="display:block; margin-bottom: 8px; color: #94a3b8;">File Name</label>
+          <input type="text" id="record-filename" placeholder="my_recording.mp4" class="custom-input" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white;">
+          <button id="record-btn" class="primary-btn glow" style="margin-top:20px; width: 100%;" disabled>START RECORDING</button>
+        </div>
       </section>
 
       <!-- Settings View -->
